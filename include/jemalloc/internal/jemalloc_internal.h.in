@@ -88,6 +88,13 @@ static const bool config_dss =
     false
 #endif
     ;
+static const bool config_private =
+#ifdef JEMALLOC_PRIVATE
+    true
+#else
+    false
+#endif
+    ;
 static const bool config_fill =
 #ifdef JEMALLOC_FILL
     true

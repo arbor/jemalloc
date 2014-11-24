@@ -26,6 +26,8 @@
 #undef je_mallctlbymib
 #undef je_memalign
 #undef je_valloc
+#undef je_config_private_heap
+#undef je_malloc_reset
 #undef je_allocm
 #undef je_rallocm
 #undef je_sallocm
@@ -163,6 +165,11 @@
  * when the cache is in the steady state.
  */
 #undef JEMALLOC_TCACHE
+
+/*
+ * JEMALLOC_PRIVATE enables use of allocations inside a private heap.
+ */
+#undef JEMALLOC_PRIVATE
 
 /*
  * JEMALLOC_DSS enables use of sbrk(2) to allocate chunks from the data storage

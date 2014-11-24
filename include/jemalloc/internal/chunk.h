@@ -59,5 +59,6 @@ void	chunk_postfork_child(void);
 #endif /* JEMALLOC_H_INLINES */
 /******************************************************************************/
 
+#include "jemalloc/internal/chunk_private.h"
 #include "jemalloc/internal/chunk_dss.h"
 #include "jemalloc/internal/chunk_mmap.h"

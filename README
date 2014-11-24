@@ -1,3 +1,57 @@
+# jemalloc with private heap
+
+This is a fork of jemalloc 3.4.1 to provide memory allocation within a
+private heap space.  This allows a process to dynamically allocate
+memory within a shared memory region.  The code has also been modified
+to allow resetting all malloc state, effectively freeing all memory in
+the private heap with one command.
+
+**WARNING:** This code has only been used in very limited
+  circumstances, and very likely has bugs.
+
+## Usage
+
+To enable the private heap:
+
+    ./configure --disable-zone-allocator --disable-tcache \
+     --with-jemalloc-prefix=je_ --enable-private-heap
+
+This will set the prefix for all the library calls to ph_.
+
+`je_config_private_heap`: Tell the library the starting address and
+size of the private heap.  This needs to be called before any memory
+is allocated.
+
+`je_malloc_reset`: Reset all the malloc state, effectively clearing
+out all references to allocated memory.  Need to call
+`je_config_private_heap` again after calling reset.
+
+## Related
+
+This code is similar to the OSSP mm library
+(http://www.ossp.org/pkg/lib/mm/).  The main difference is that the mm
+library assumes processes have a common parent and allows allocations
+to be made by any child process.  This project only supports
+allocations from a single process, however it support sharing the
+private heap between completely unrelated processes.
+
+## To-do
+
+* The reset code attempts to clear out all global state in the code
+  mainly by clearing the initialized flags.  A cleaner solution would
+  be to collect all the global state into a single structure.  This
+  would make it easier to make sure all global state had been cleared
+  and reset when needed.  It could also allow multiple private heaps
+  in a single process.
+
+* The library allocates a single block of memory for private state on
+  first allocation (4 Mb in practice).  It would be nicer if this
+  could be allocated outside of the private heap, although that would
+  require more modifications to the underlying library.
+
+
+## Original readme
+
 jemalloc is a general purpose malloc(3) implementation that emphasizes
 fragmentation avoidance and scalable concurrency support.  jemalloc first came
 into use as the FreeBSD libc allocator in 2005, and since then it has found its

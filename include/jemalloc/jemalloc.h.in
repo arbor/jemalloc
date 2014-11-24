@@ -84,6 +84,12 @@ JEMALLOC_EXPORT int	je_dallocm(void *ptr, int flags)
 JEMALLOC_EXPORT int	je_nallocm(size_t *rsize, size_t size, int flags);
 #endif
 
+/* XXX Put this into the config tree eventually. */
+JEMALLOC_EXPORT void	je_config_private_heap(void *base, size_t len);
+
+/* XXX Hack to reset the state. */
+JEMALLOC_EXPORT void	je_malloc_reset(void);
+
 /*
  * By default application code must explicitly refer to mangled symbol names,
  * so that it is possible to use jemalloc in conjunction with another allocator
@@ -110,6 +116,8 @@ JEMALLOC_EXPORT int	je_nallocm(size_t *rsize, size_t size, int flags);
 #define	mallctlbymib je_mallctlbymib
 #define	memalign je_memalign
 #define	valloc je_valloc
+#define config_private_heap je_config_private_heap
+#define malloc_reset je_malloc_reset
 #ifdef JEMALLOC_EXPERIMENTAL
 #define	allocm je_allocm
 #define	rallocm je_rallocm
@@ -142,6 +150,8 @@ JEMALLOC_EXPORT int	je_nallocm(size_t *rsize, size_t size, int flags);
 #undef je_mallctlbymib
 #undef je_memalign
 #undef je_valloc
+#undef je_config_private_heap
+#undef je_malloc_reset
 #ifdef JEMALLOC_EXPERIMENTAL
 #undef je_allocm
 #undef je_rallocm

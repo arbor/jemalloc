@@ -108,6 +108,26 @@ a_attr pthread_key_t	a_name##_tsd;					\
 a_attr bool		a_name##_booted = false;
 #endif
 
+/* malloc_tsd_reset(). */
+#ifdef JEMALLOC_MALLOC_THREAD_CLEANUP
+#define	malloc_tsd_reset(a_name, a_initializer)				\
+    a_name##_tls = a_initializer;					\
+    a_name##_initialized = false;					\
+    a_name##_booted = false
+#elif (defined(JEMALLOC_TLS))
+#define	malloc_tsd_reset(a_name, a_initializer)				\
+    pthread_key_delete(a_name##_tsd);					\
+    a_name##_tls = a_initializer;					\
+    a_name##_booted = false
+#elif (defined(_WIN32))
+#define	malloc_tsd_reset(a_name, a_initializer)				\
+    a_name##_booted = false
+#else
+#define	malloc_tsd_reset(a_name, a_initializer)				\
+    pthread_key_delete(a_name##_tsd);					\
+    a_name##_booted = false
+#endif
+
 /* malloc_tsd_funcs(). */
 #ifdef JEMALLOC_MALLOC_THREAD_CLEANUP
 #define	malloc_tsd_funcs(a_attr, a_name, a_type, a_initializer,		\

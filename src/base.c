@@ -114,6 +114,11 @@ base_boot(void)
 {
 
 	base_nodes = NULL;
+	/* XXX Needed for when we reset. */
+	base_pages = NULL;
+	base_next_addr = NULL;
+	base_past_addr = NULL;
+	/* XXX end new reset code. */
 	if (malloc_mutex_init(&base_mtx))
 		return (true);
 

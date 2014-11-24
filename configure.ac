@@ -444,6 +444,24 @@ if test "x$enable_experimental" = "x1" ; then
 fi
 AC_SUBST([enable_experimental])
 
+dnl Do not enable allocation for a private heap by default.
+AC_ARG_ENABLE([private_heap],
+  [AS_HELP_STRING([--enable-private-heap],
+  [Enable allocation from private heap])],
+[if test "x$enable_private_heap" = "xno" ; then
+  enable_private="0"
+else
+  enable_private="1"
+fi
+],
+[enable_private="0"]
+)
+if test "x$enable_private" = "x1" ; then
+  AC_DEFINE([JEMALLOC_PRIVATE], [ ])
+  public_syms="${public_syms} config_private_heap malloc_reset"
+fi
+AC_SUBST([enable_private])
+
 dnl Perform no name mangling by default.
 AC_ARG_WITH([mangling],
   [AS_HELP_STRING([--with-mangling=<map>], [Mangle symbols in <map>])],
@@ -831,6 +849,9 @@ else
 fi
 
 if test "x$enable_dss" = "x1" ; then
+  if test "x${enable_private}" = "x1" ; then
+    AC_MSG_ERROR([--enable-dss is incompatible with --enable-private-heap])
+  fi
   AC_DEFINE([JEMALLOC_DSS], [ ])
 fi
 AC_SUBST([enable_dss])
@@ -1232,6 +1253,9 @@ if test "x${enable_zone_allocator}" = "x1" ; then
   if test "x${abi}" != "xmacho"; then
     AC_MSG_ERROR([--enable-zone-allocator is only supported on Darwin])
   fi
+  if test "x${enable_private}" = "x1" ; then
+    AC_MSG_ERROR([--enable-zone-allocator is incompatible with --enable-private-heap])
+  fi
   AC_DEFINE([JEMALLOC_IVSALLOC], [ ])
   AC_DEFINE([JEMALLOC_ZONE], [ ])
 
@@ -1336,6 +1360,7 @@ AC_MSG_RESULT([valgrind           : ${enable_valgrind}])
 AC_MSG_RESULT([xmalloc            : ${enable_xmalloc}])
 AC_MSG_RESULT([mremap             : ${enable_mremap}])
 AC_MSG_RESULT([munmap             : ${enable_munmap}])
+AC_MSG_RESULT([private_heap       : ${enable_private}])
 AC_MSG_RESULT([dss                : ${enable_dss}])
 AC_MSG_RESULT([lazy_lock          : ${enable_lazy_lock}])
 AC_MSG_RESULT([tls                : ${enable_tls}])

@@ -152,6 +152,19 @@ chunk_alloc(size_t size, size_t alignment, bool base, bool *zero,
 	assert(alignment != 0);
 	assert((alignment & chunksize_mask) == 0);
 
+	/* private heap. */
+	if (config_private) {
+		/* Re-use the dss trees. */
+		if ((ret = chunk_recycle(&chunks_szad_dss, &chunks_ad_dss, size,
+		    alignment, base, zero)) != NULL)
+			goto label_return;
+		if ((ret = chunk_alloc_private(size, alignment, zero)) != NULL)
+			goto label_return;
+
+		/* Don't allow other allocation strategies to run. */
+		ret = NULL;
+		goto label_return;
+	}
 	/* "primary" dss. */
 	if (config_dss && dss_prec == dss_prec_primary) {
 		if ((ret = chunk_recycle(&chunks_szad_dss, &chunks_ad_dss, size,
@@ -305,7 +318,7 @@ chunk_unmap(void *chunk, size_t size)
 	assert(size != 0);
 	assert((size & chunksize_mask) == 0);
 
-	if (config_dss && chunk_in_dss(chunk))
+	if (config_private || (config_dss && chunk_in_dss(chunk)))
 		chunk_record(&chunks_szad_dss, &chunks_ad_dss, chunk, size);
 	else if (chunk_dealloc_mmap(chunk, size))
 		chunk_record(&chunks_szad_mmap, &chunks_ad_mmap, chunk, size);
@@ -348,6 +361,8 @@ chunk_boot(void)
 			return (true);
 		memset(&stats_chunks, 0, sizeof(chunk_stats_t));
 	}
+	if (config_private && chunk_private_boot())
+		return (true);
 	if (config_dss && chunk_dss_boot())
 		return (true);
 	extent_tree_szad_new(&chunks_szad_mmap);
@@ -372,6 +387,7 @@ chunk_prefork(void)
 	if (config_ivsalloc)
 		rtree_prefork(chunks_rtree);
 	chunk_dss_prefork();
+	chunk_private_prefork();
 }
 
 void
@@ -379,6 +395,7 @@ chunk_postfork_parent(void)
 {
 
 	chunk_dss_postfork_parent();
+	chunk_private_postfork_parent();
 	if (config_ivsalloc)
 		rtree_postfork_parent(chunks_rtree);
 	malloc_mutex_postfork_parent(&chunks_mtx);
@@ -389,6 +406,7 @@ chunk_postfork_child(void)
 {
 
 	chunk_dss_postfork_child();
+	chunk_private_postfork_child();
 	if (config_ivsalloc)
 		rtree_postfork_child(chunks_rtree);
 	malloc_mutex_postfork_child(&chunks_mtx);

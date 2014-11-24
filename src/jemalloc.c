@@ -844,6 +844,34 @@ malloc_init_hard(void)
 	return (false);
 }
 
+/**
+ * Used to throw away all the current state.
+ * XXX Only intended for the private heap allocator.
+ * Need to call je_config_private_heap to reset the private heap pointers.
+ */
+void
+je_malloc_reset(void)
+{
+	malloc_initialized = false;
+	malloc_initializer = NO_INITIALIZER;
+
+	/*
+	 * Reset all the thread local data.
+	 * XXX This probably does not play well with threads.
+	 * XXX These lines need to stay in sync with the malloc_tsd_data calls.
+	 */
+	malloc_tsd_reset(arenas, NULL);
+	malloc_tsd_reset(thread_allocated,
+			 (thread_allocated_t)THREAD_ALLOCATED_INITIALIZER);
+	malloc_tsd_reset(prof_tdata, NULL);
+	malloc_tsd_reset(quarantine, NULL);
+	malloc_tsd_reset(tcache, NULL);
+	malloc_tsd_reset(tcache_enabled, tcache_enabled_default);
+
+	/* XXX Might want to protect this with 'if (config_private).' */
+	je_config_private_heap(NULL, 0);
+}
+
 /*
  * End initialization functions.
  */
@@ -1731,8 +1759,10 @@ JEMALLOC_ATTR(constructor)
 static void
 jemalloc_constructor(void)
 {
-
-	malloc_init();
+	/* The private heap hasn't been allocated yet. */
+	if (!config_private) {
+		malloc_init();
+	}
 }
 
 #ifndef JEMALLOC_MUTEX_INIT_CB
@@ -1866,3 +1896,9 @@ a0free(void *ptr)
 }
 
 /******************************************************************************/
+
+void
+je_config_private_heap(void *base, size_t len)
+{
+	chunk_private_config(base, len);
+}
